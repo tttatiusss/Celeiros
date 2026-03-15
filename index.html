@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Celeiros</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              dark: '#047857',
+              DEFAULT: '#059669',
+              light: '#10b981',
+              pale: '#d1fae5',
+            },
+            beige: {
+              dark: '#a78b71',
+              DEFAULT: '#d4c4b0',
+              light: '#f5f0e8',
+              cream: '#f5f0e8',
+            },
+          },
+          fontFamily: {
+            display: ['Cormorant Garamond', 'Georgia', 'serif'],
+            sans: ['Source Sans 3', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { font-family: 'Source Sans 3', system-ui, sans-serif; }
+    .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+    .btn-tap:active { transform: scale(0.98); }
+    .btn-like:active .heart-icon { transform: scale(1.2); }
+
+    @keyframes cardEnter {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1); }
+      40% { transform: scale(1.4); }
+      70% { transform: scale(1.15); }
+    }
+    @keyframes heroGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.92; }
+    }
+    @keyframes countPop {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+    }
+
+    .animate-card-enter {
+      animation: cardEnter 0.4s ease-out forwards;
+    }
+    .animate-heart-pulse {
+      animation: heartPulse 0.45s ease-out;
+    }
+    .animate-count-pop {
+      animation: countPop 0.3s ease-out;
+    }
+    .hero-box {
+      animation: heroGlow 4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-beige-cream text-stone-800 antialiased min-h-screen flex flex-col">
+  <!-- Cabeçalho -->
+  <header class="bg-white/80 backdrop-blur-sm border-b border-beige-dark/20 sticky top-0 z-10">
+    <div class="max-w-2xl mx-auto px-4 py-5 text-center">
+      <h1 class="font-display text-4xl md:text-5xl font-semibold text-emerald-dark tracking-tight">Celeiros</h1>
+      <p class="text-beige-dark text-sm md:text-base mt-1">Seu mini-mercado</p>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-2xl mx-auto w-full px-4 py-8 md:py-12">
+    <!-- Chamada (Marketing) -->
+    <section class="mb-10 md:mb-14">
+      <div class="hero-box bg-emerald-pale/60 border border-emerald/20 rounded-2xl p-6 md:p-8 text-center transition-all duration-300">
+        <p class="font-display text-xl md:text-2xl lg:text-3xl text-emerald-dark font-semibold leading-tight">
+          Conte para a gente: qual produto não pode faltar na sua próxima visita?
+        </p>
+        <p class="text-stone-600 mt-4 text-sm md:text-base max-w-lg mx-auto">
+          Dê sua sugestão ou vote no produto do seu vizinho.
+        </p>
+      </div>
+    </section>
+
+    <!-- Formulário -->
+    <section class="mb-12 md:mb-16">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input
+          id="input-produto"
+          type="text"
+          placeholder="Digite o nome do produto..."
+          class="flex-1 px-4 py-3.5 rounded-xl border-2 border-beige-dark/30 bg-white text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald focus:ring-2 focus:ring-emerald/20 transition-all duration-200"
+        />
+        <button
+          id="btn-sugerir"
+          type="button"
+          class="btn-tap px-6 py-3.5 rounded-xl bg-emerald text-white font-semibold shadow-md hover:bg-emerald-dark hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2 active:bg-emerald-dark active:translate-y-0 transition-all duration-200"
+        >
+          Sugerir
+        </button>
+      </div>
+      <p id="msg-form" class="mt-2 text-sm text-amber-700 hidden" aria-live="polite"></p>
+    </section>
+
+    <!-- Lista de Cards -->
+    <section>
+      <h2 class="font-display text-2xl md:text-3xl font-semibold text-emerald-dark mb-6 text-center">
+        🛒Produtos sugeridos pela vizinhança 
+      </h2>
+      <ul id="lista-produtos" class="space-y-4">
+        <!-- Cards gerados por renderizarProdutos() -->
+      </ul>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-beige-dark/20 mt-auto">
+    <div class="max-w-2xl mx-auto px-4 py-6 text-center">
+      <p class="text-stone-600 text-sm md:text-base">A Celeiros é feita por você.</p>
+    </div>
+  </footer>
+
+  <script>
+    const STORAGE_LIKES = 'celeiros_curtidos';
+    const STORAGE_MEUS_PRODUTOS = 'celeiros_meus_produtos';
+
+    let produtos = [
+      { id: 1, nome: 'Pão de Queijo', votos: 0 },
+    ];
+
+    let proximoId = 2;
+    var editandoId = null;
+
+    const listaEl = document.getElementById('lista-produtos');
+    const inputEl = document.getElementById('input-produto');
+    const btnSugerir = document.getElementById('btn-sugerir');
+
+    function getMeusProdutos() {
+      try {
+        var raw = localStorage.getItem(STORAGE_MEUS_PRODUTOS);
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function addMeuProduto(id) {
+      var ids = getMeusProdutos();
+      if (ids.indexOf(id) !== -1) return;
+      ids.push(id);
+      localStorage.setItem(STORAGE_MEUS_PRODUTOS, JSON.stringify(ids));
+    }
+
+    function removeMeuProduto(id) {
+      var ids = getMeusProdutos().filter(function (x) { return x !== id; });
+      localStorage.setItem(STORAGE_MEUS_PRODUTOS, JSON.stringify(ids));
+    }
+
+    function ehMeuProduto(id) {
+      return getMeusProdutos().indexOf(id) !== -1;
+    }
+
+    function getLikesUsuario() {
+      try {
+        var raw = localStorage.getItem(STORAGE_LIKES);
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function setLikeUsuario(idProduto) {
+      var likes = getLikesUsuario();
+      if (likes.indexOf(idProduto) !== -1) return;
+      likes.push(idProduto);
+      localStorage.setItem(STORAGE_LIKES, JSON.stringify(likes));
+    }
+
+    function removeLikeUsuario(idProduto) {
+      var likes = getLikesUsuario().filter(function (id) { return id !== idProduto; });
+      localStorage.setItem(STORAGE_LIKES, JSON.stringify(likes));
+    }
+
+    function jaCurtiu(idProduto) {
+      return getLikesUsuario().indexOf(idProduto) !== -1;
+    }
+
+    function renderizarProdutos() {
+      var ordenados = [...produtos].sort(function (a, b) { return b.votos - a.votos; });
+
+      listaEl.innerHTML = '';
+
+      ordenados.forEach(function (produto, index) {
+        var curtido = jaCurtiu(produto.id);
+        var meu = ehMeuProduto(produto.id);
+        var editando = editandoId === produto.id;
+        var delay = index * 60;
+        var btnClasse = curtido
+          ? 'btn-like btn-tap flex items-center gap-1.5 text-red-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 rounded-lg px-2 py-1.5 transition-all duration-200 shrink-0 cursor-pointer'
+          : 'btn-like btn-tap flex items-center gap-1.5 text-emerald hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2 rounded-lg px-2 py-1.5 transition-all duration-200 shrink-0 cursor-pointer';
+
+        var conteudoEsq = '';
+        if (editando) {
+          conteudoEsq =
+            '<input type="text" class="input-editar flex-1 min-w-0 px-2 py-1 rounded-lg border border-beige-dark/40 text-stone-800" value="' + escapeHtml(produto.nome) + '" data-id="' + produto.id + '" />' +
+            '<div class="flex gap-2 shrink-0">' +
+              '<button type="button" class="btn-salvar-editar text-sm font-medium text-emerald hover:text-emerald-dark px-2 py-1 rounded" data-id="' + produto.id + '">Salvar</button>' +
+              '<button type="button" class="btn-cancelar-editar text-sm font-medium text-stone-500 hover:text-stone-700 px-2 py-1 rounded" data-id="' + produto.id + '">Cancelar</button>' +
+            '</div>';
+        } else {
+          conteudoEsq = '<span class="font-semibold text-stone-800 flex-1">' + escapeHtml(produto.nome) + '</span>';
+          if (meu) {
+            conteudoEsq +=
+              '<div class="flex gap-2 shrink-0">' +
+                '<button type="button" class="btn-editar text-xs font-medium text-stone-500 hover:text-emerald px-2 py-1 rounded" data-id="' + produto.id + '">Editar</button>' +
+                '<button type="button" class="btn-excluir text-xs font-medium text-stone-500 hover:text-red-500 px-2 py-1 rounded" data-id="' + produto.id + '">Excluir</button>' +
+              '</div>';
+          }
+        }
+
+        var li = document.createElement('li');
+        li.className = 'animate-card-enter opacity-0';
+        li.style.animationDelay = delay + 'ms';
+        li.innerHTML =
+          '<article class="card-produto bg-white rounded-2xl border border-beige-dark/20 shadow-sm p-5 flex items-center justify-between gap-4 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-default flex-wrap">' +
+            '<div class="flex flex-1 min-w-0 items-center gap-2 flex-wrap">' + conteudoEsq + '</div>' +
+            '<button type="button" class="' + btnClasse + '" data-id="' + produto.id + '" data-curtido="' + curtido + '" aria-label="' + (curtido ? 'Remover like' : 'Curtir') + '">' +
+              '<span class="heart-icon text-lg inline-block">❤️</span>' +
+              '<span class="contador text-sm font-semibold tabular-nums">' + produto.votos + '</span>' +
+            '</button>' +
+          '</article>';
+        listaEl.appendChild(li);
+      });
+
+      if (editandoId !== null) {
+        var inputEdit = listaEl.querySelector('.input-editar');
+        if (inputEdit) {
+          inputEdit.focus();
+          inputEdit.select();
+        }
+      }
+    }
+
+    listaEl.addEventListener('click', function (e) {
+      var btnExcluir = e.target.closest('.btn-excluir');
+      if (btnExcluir) {
+        e.preventDefault();
+        var id = parseInt(btnExcluir.getAttribute('data-id'), 10);
+        produtos = produtos.filter(function (p) { return p.id !== id; });
+        removeMeuProduto(id);
+        removeLikeUsuario(id);
+        if (editandoId === id) editandoId = null;
+        renderizarProdutos();
+        return;
+      }
+      var btnCancelar = e.target.closest('.btn-cancelar-editar');
+      if (btnCancelar) {
+        editandoId = null;
+        renderizarProdutos();
+        return;
+      }
+      var btnSalvar = e.target.closest('.btn-salvar-editar');
+      if (btnSalvar) {
+        var card = btnSalvar.closest('.card-produto');
+        var input = card ? card.querySelector('.input-editar') : null;
+        var id = parseInt(btnSalvar.getAttribute('data-id'), 10);
+        var p = produtos.find(function (x) { return x.id === id; });
+        if (!p || !input) return;
+        var novoNome = input.value.trim();
+        if (!novoNome) {
+          mostrarMsgForm('O nome não pode ficar em branco.', true);
+          return;
+        }
+        var outroComMesmoNome = produtos.some(function (x) { return x.id !== id && x.nome.toLowerCase().trim() === novoNome.toLowerCase(); });
+        if (outroComMesmoNome) {
+          mostrarMsgForm('Já existe um produto com esse nome.', true);
+          return;
+        }
+        p.nome = novoNome;
+        editandoId = null;
+        renderizarProdutos();
+        return;
+      }
+      var btnEditar = e.target.closest('.btn-editar');
+      if (btnEditar) {
+        var id = parseInt(btnEditar.getAttribute('data-id'), 10);
+        editandoId = id;
+        renderizarProdutos();
+        return;
+      }
+      var btn = e.target.closest('.btn-like');
+      if (!btn) return;
+      var id = parseInt(btn.getAttribute('data-id'), 10);
+      var p = produtos.find(function (x) { return x.id === id; });
+      if (!p) return;
+      var heart = btn.querySelector('.heart-icon');
+      var contador = btn.querySelector('.contador');
+      if (heart) heart.classList.add('animate-heart-pulse');
+      var curtido = jaCurtiu(id);
+      if (curtido) {
+        p.votos = Math.max(0, p.votos - 1);
+        removeLikeUsuario(id);
+      } else {
+        p.votos += 1;
+        setLikeUsuario(id);
+      }
+      if (contador) contador.classList.add('animate-count-pop');
+      if (contador) contador.textContent = p.votos;
+      setTimeout(function () { renderizarProdutos(); }, 350);
+    });
+
+    listaEl.addEventListener('keydown', function (e) {
+      if (editandoId === null) return;
+      if (e.key === 'Escape') {
+        editandoId = null;
+        renderizarProdutos();
+      }
+      if (e.key === 'Enter' && e.target.classList.contains('input-editar')) {
+        e.target.closest('.card-produto').querySelector('.btn-salvar-editar').click();
+      }
+    });
+
+    function escapeHtml(texto) {
+      const div = document.createElement('div');
+      div.textContent = texto;
+      return div.innerHTML;
+    }
+
+    function produtoJaCadastrado(nome) {
+      var n = nome.toLowerCase().trim();
+      return produtos.some(function (p) { return p.nome.toLowerCase().trim() === n; });
+    }
+
+    function mostrarMsgForm(texto, ehErro) {
+      var msg = document.getElementById('msg-form');
+      if (!msg) return;
+      msg.textContent = texto;
+      msg.classList.remove('hidden');
+      if (ehErro) msg.classList.add('text-amber-700'); else msg.classList.remove('text-amber-700');
+      clearTimeout(msg._timer);
+      msg._timer = setTimeout(function () { msg.classList.add('hidden'); msg.textContent = ''; }, 4000);
+    }
+
+    btnSugerir.addEventListener('click', function () {
+      var nome = inputEl.value.trim();
+      if (!nome) return;
+
+      if (produtoJaCadastrado(nome)) {
+        mostrarMsgForm('Este produto já está cadastrado.', true);
+        return;
+      }
+
+      var novoId = proximoId;
+      produtos.push({
+        id: novoId,
+        nome: nome,
+        votos: 1,
+      });
+      proximoId += 1;
+      setLikeUsuario(novoId);
+      addMeuProduto(novoId);
+
+      inputEl.value = '';
+      var msg = document.getElementById('msg-form');
+      if (msg) msg.classList.add('hidden');
+      renderizarProdutos();
+    });
+
+    inputEl.addEventListener('input', function () {
+      var msg = document.getElementById('msg-form');
+      if (msg && !msg.classList.contains('hidden')) msg.classList.add('hidden');
+    });
+
+    inputEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        btnSugerir.click();
+      }
+    });
+
+    renderizarProdutos();
+  </script>
+</body>
+</html>
