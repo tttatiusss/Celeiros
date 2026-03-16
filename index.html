@@ -14,16 +14,16 @@
         extend: {
           colors: {
             emerald: {
-              dark: '#047857',
-              DEFAULT: '#059669',
-              light: '#10b981',
-              pale: '#d1fae5',
+              dark: '#783219',
+              DEFAULT: '#783219',
+              light: '#783219',
+              pale: '#fff8e9',
             },
             beige: {
-              dark: '#a78b71',
-              DEFAULT: '#d4c4b0',
-              light: '#f5f0e8',
-              cream: '#f5f0e8',
+              dark: '#783219',
+              DEFAULT: '#fff8e9',
+              light: '#fff8e9',
+              cream: '#fff8e9',
             },
           },
           fontFamily: {
@@ -80,10 +80,9 @@
 </head>
 <body class="bg-beige-cream text-stone-800 antialiased min-h-screen flex flex-col">
   <!-- Cabeçalho -->
-  <header class="bg-white/80 backdrop-blur-sm border-b border-beige-dark/20 sticky top-0 z-10">
+  <header class="bg-beige-cream/80 backdrop-blur-sm border-b border-beige-dark/20 sticky top-0 z-10">
     <div class="max-w-2xl mx-auto px-4 py-5 text-center">
       <h1 class="font-display text-4xl md:text-5xl font-semibold text-emerald-dark tracking-tight">Celeiros</h1>
-      <p class="text-beige-dark text-sm md:text-base mt-1">Seu mini-mercado</p>
     </div>
   </header>
 
@@ -107,7 +106,7 @@
           id="input-produto"
           type="text"
           placeholder="Digite o nome do produto..."
-          class="flex-1 px-4 py-3.5 rounded-xl border-2 border-beige-dark/30 bg-white text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald focus:ring-2 focus:ring-emerald/20 transition-all duration-200"
+          class="flex-1 px-4 py-3.5 rounded-xl border-2 border-beige-dark/30 bg-beige-cream text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald focus:ring-2 focus:ring-emerald/20 transition-all duration-200"
         />
         <button
           id="btn-sugerir"
@@ -132,13 +131,27 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-white border-t border-beige-dark/20 mt-auto">
+  <footer class="bg-beige-cream border-t border-beige-dark/20 mt-auto">
     <div class="max-w-2xl mx-auto px-4 py-6 text-center">
-      <p class="text-stone-600 text-sm md:text-base">A Celeiros é feita por você.</p>
+      <p class="text-stone-600 text-sm md:text-base">Celeiros é feita por você, para você.</p>
     </div>
   </footer>
 
   <script>
+    async function checarLogin() {
+      try {
+        var res = await fetch('/api/me', { credentials: 'include' });
+        var data = await res.json();
+        if (!data || !data.authenticated) {
+          window.location.href = '/Celeiros/login.html';
+        }
+      } catch (_) {
+        window.location.href = '/Celeiros/login.html';
+      }
+    }
+
+    checarLogin();
+
     const STORAGE_LIKES = 'celeiros_curtidos';
     const STORAGE_MEUS_PRODUTOS = 'celeiros_meus_produtos';
 
@@ -220,7 +233,7 @@
         var conteudoEsq = '';
         if (editando) {
           conteudoEsq =
-            '<input type="text" class="input-editar flex-1 min-w-0 px-2 py-1 rounded-lg border border-beige-dark/40 text-stone-800" value="' + escapeHtml(produto.nome) + '" data-id="' + produto.id + '" />' +
+            '<input type="text" class="input-editar flex-1 min-w-0 px-2 py-1 rounded-lg border border-beige-dark/40 bg-beige-cream text-stone-800" value="' + escapeHtml(produto.nome) + '" data-id="' + produto.id + '" />' +
             '<div class="flex gap-2 shrink-0">' +
               '<button type="button" class="btn-salvar-editar text-sm font-medium text-emerald hover:text-emerald-dark px-2 py-1 rounded" data-id="' + produto.id + '">Salvar</button>' +
               '<button type="button" class="btn-cancelar-editar text-sm font-medium text-stone-500 hover:text-stone-700 px-2 py-1 rounded" data-id="' + produto.id + '">Cancelar</button>' +
@@ -240,7 +253,7 @@
         li.className = 'animate-card-enter opacity-0';
         li.style.animationDelay = delay + 'ms';
         li.innerHTML =
-          '<article class="card-produto bg-white rounded-2xl border border-beige-dark/20 shadow-sm p-5 flex items-center justify-between gap-4 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-default flex-wrap">' +
+          '<article class="card-produto bg-beige-cream rounded-2xl border border-beige-dark/20 shadow-sm p-5 flex items-center justify-between gap-4 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-default flex-wrap">' +
             '<div class="flex flex-1 min-w-0 items-center gap-2 flex-wrap">' + conteudoEsq + '</div>' +
             '<button type="button" class="' + btnClasse + '" data-id="' + produto.id + '" data-curtido="' + curtido + '" aria-label="' + (curtido ? 'Remover like' : 'Curtir') + '">' +
               '<span class="heart-icon text-lg inline-block">❤️</span>' +
