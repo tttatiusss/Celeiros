@@ -77,16 +77,26 @@ function createApp({ db }) {
 
   function normalizeApartment(ap) {
     if (ap === null || ap === undefined) return '';
-    return String(ap).trim().replace(/\s+/g, '');
+    const v = String(ap).trim();
+    if (!v) return '';
+    if (!/^\d+$/.test(v)) return '';
+    return v;
+  }
+
+  function normalizeBlock(b) {
+    if (b === null || b === undefined) return '';
+    return String(b).trim().replace(/\s+/g, ' ');
   }
 
   app.post('/api/auth/login', async (req, res, next) => {
     try {
       const fullName = normalizeFullName(req.body && req.body.nomeCompleto);
       const apartmentNumber = normalizeApartment(req.body && req.body.apartamento);
+      const block = normalizeBlock(req.body && req.body.bloco);
       const lembrar = !!(req.body && req.body.lembrar);
       if (!fullName) return res.status(400).json({ error: 'Informe o nome completo.' });
-      if (!apartmentNumber) return res.status(400).json({ error: 'Informe o número do apartamento.' });
+      if (!block) return res.status(400).json({ error: 'Informe o bloco.' });
+      if (!apartmentNumber) return res.status(400).json({ error: 'Informe um número de apartamento válido (apenas números).' });
 
       let user = await get(
         db,
@@ -94,9 +104,10 @@ function createApp({ db }) {
         SELECT id
         FROM users
         WHERE lower(trim(full_name)) = lower(trim(?))
+          AND lower(trim(block)) = lower(trim(?))
           AND trim(apartment_number) = trim(?)
         `,
-        [fullName, apartmentNumber],
+        [fullName, block, apartmentNumber],
       );
 
       // Se não existir, cria automaticamente
@@ -105,8 +116,8 @@ function createApp({ db }) {
         try {
           await run(
             db,
-            `INSERT INTO users (client_id, full_name, apartment_number) VALUES (?, ?, ?)`,
-            [clientId, fullName, apartmentNumber],
+            `INSERT INTO users (client_id, full_name, block, apartment_number) VALUES (?, ?, ?, ?)`,
+            [clientId, fullName, block, apartmentNumber],
           );
         } catch (err) {
           // Se houve corrida e alguém criou ao mesmo tempo, só continua buscando
@@ -119,9 +130,10 @@ function createApp({ db }) {
           SELECT id
           FROM users
           WHERE lower(trim(full_name)) = lower(trim(?))
+            AND lower(trim(block)) = lower(trim(?))
             AND trim(apartment_number) = trim(?)
           `,
-          [fullName, apartmentNumber],
+          [fullName, block, apartmentNumber],
         );
       }
 

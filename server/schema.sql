@@ -5,13 +5,14 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   client_id TEXT NOT NULL UNIQUE,
   full_name TEXT,
+  block TEXT,
   apartment_number TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_fullname_apartment_unique
-ON users(lower(trim(full_name)), trim(apartment_number))
-WHERE full_name IS NOT NULL AND apartment_number IS NOT NULL;
+ON users(lower(trim(full_name)), lower(trim(block)), trim(apartment_number))
+WHERE full_name IS NOT NULL AND block IS NOT NULL AND apartment_number IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
